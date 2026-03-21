@@ -14,29 +14,31 @@ export const pegarUsuarios = async (req, res) => {
 }
 
 export const cadastrarUsuario = async (req, res) => {
-
-    const { name, email, password } = req.body;
-
     try {
+        const { name, email, password } = req.body;
+
         if (!name || !email || !password) {
-            res.json({ message: "Todas as informações são obrigatórias!" });
-            return;
+            return res.status(400).json({ message: "Todas as informações são obrigatórias!" });
+        }
+
+        const usuarioExistente = await User.findOne({ email });
+
+        if (usuarioExistente) {
+            return res.status(400).json({ message: "Este e-mail já está em uso." });
         }
 
         const newUser = await User.create({
-            name: name,
-            email: email,
-            password: password,
-
+            name,
+            email,
+            password
         });
 
-        res.json(newUser);
+        return res.status(201).json(newUser);
 
     } catch (error) {
-        console.log('Erro ao adicionar o usuário');
-        return;
+        console.error('Erro ao adicionar o usuário:', error);
+        return res.status(500).json({ message: "Erro interno no servidor." });
     }
-
 }
 
 export const deletarUsuario = async (req, res) => {
