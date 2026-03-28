@@ -4,7 +4,11 @@ import mongoose from "mongoose";
 const userSchema = new mongoose.Schema({
     name: { type: String },
     email: { type: String },
-    password: { type: String }
+    password: { type: String },
+    avatar: {
+        type: String,
+        default: ""
+    }
 });
 
 userSchema.pre('save', async function () {
