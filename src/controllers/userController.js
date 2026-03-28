@@ -92,3 +92,32 @@ export const loginUsuario = async (req, res) => {
         res.status(500).json({ message: "Erro interno no servidor.", error: error.message });
     }
 }
+
+export const uploadFoto = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "Nenhuma imagem foi enviada." });
+        }
+
+        const linkDaFoto = req.file.path;
+        const userId = req.usuarioId;
+        const usuarioAtualizado = await User.findByIdAndUpdate(
+            userId,
+            { avatar: linkDaFoto },
+            { new: true }
+        );
+
+        if (!usuarioAtualizado) {
+            return res.status(404).json({ message: "Usuário não encontrado." });
+        }
+
+        return res.status(200).json({
+            message: "Foto atualizada com sucesso!",
+            avatar: linkDaFoto
+        });
+
+    } catch (error) {
+        console.error('Erro ao atualizar a foto:', error);
+        return res.status(500).json({ message: "Erro interno no servidor.", error: error.message });
+    }
+}

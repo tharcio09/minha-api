@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { rotaInicial, pegarUsuarios, cadastrarUsuario, deletarUsuario, editarUsuario, loginUsuario } from './controllers/userController.js';
+import { rotaInicial, pegarUsuarios, cadastrarUsuario, deletarUsuario, editarUsuario, loginUsuario, uploadFoto } from './controllers/userController.js';
 import { verificarToken } from "./middlewares/auth.js";
+import upload from './config/upload.js';
 
 export const routes = Router();
 
@@ -10,3 +11,4 @@ routes.post('/usuario', cadastrarUsuario);
 routes.delete('/usuario/:id', verificarToken, deletarUsuario);
 routes.put('/usuario/:id', verificarToken, editarUsuario);
 routes.post('/login', loginUsuario);
+routes.patch('/usuario/foto', verificarToken, upload.single('foto'), uploadFoto);
