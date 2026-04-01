@@ -3,12 +3,16 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
     name: { type: String },
-    email: { type: String },
+    email: { type: String, required: true, unique: true },
     password: { type: String },
     avatar: {
         type: String,
         default: ""
-    }
+    },
+    links: [{
+        titulo: { type: String, required: true },
+        url: { type: String, required: true }
+    }],
 });
 
 userSchema.pre('save', async function () {

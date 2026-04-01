@@ -6,12 +6,6 @@ export const rotaInicial = (req, res) => {
     res.json({ message: "Bateu na rota inicial" });
 }
 
-export const pegarUsuarios = async (req, res) => {
-
-    const usuarios = await User.find();
-
-    res.json(usuarios);
-}
 
 export const cadastrarUsuario = async (req, res) => {
     try {
@@ -119,5 +113,64 @@ export const uploadFoto = async (req, res) => {
     } catch (error) {
         console.error('Erro ao atualizar a foto:', error);
         return res.status(500).json({ message: "Erro interno no servidor.", error: error.message });
+    }
+}
+
+export const pegarMeuPerfil = async (req, res) => {
+    try {
+        const usuario = await User.findById(req.usuarioId).select("-password");
+
+        if (!usuario) {
+            return res.status(404).json({ message: "Usuário não encontrado." });
+        }
+
+        res.json(usuario);
+    } catch (error) {
+        res.status(500).json({ message: "Erro ao buscar seu perfil." });
+    }
+}
+
+export const adicionarLink = async (req, res) => {
+    try {
+        const { titulo, url } = req.body;
+
+        if (!titulo || !url) {
+            return res.status(400).json({ message: "Título e URL são obrigatórios." });
+        }
+
+        const usuarioAtualizado = await User.findByIdAndUpdate(
+            req.usuarioId,
+            { $push: { links: { titulo, url } } },
+            { new: true }
+        ).select("-password");
+
+        if (!usuarioAtualizado) {
+            return res.status(404).json({ message: "Usuário não encontrado." });
+        }
+
+        res.status(201).json({
+            message: "Link adicionado com sucesso!",
+            usuario: usuarioAtualizado
+        });
+
+    } catch (error) {
+        console.error('ERRO AO ADICIONAR LINK:', error);
+        res.status(500).json({ message: "Erro ao salvar o link." });
+    }
+}
+
+export const pegarPerfilPublico = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const usuario = await User.findById(id).select("name avatar links");
+
+        if (!usuario) {
+            return res.status(404).json({ message: "Perfil não encontrado." });
+        }
+
+        res.json(usuario);
+    } catch (error) {
+        console.error({ message: 'ERRO AO BUSCAR PERFIL PÚBLICO:', error });
+        res.status(500).json({ message: "Erro ao carregar o perfil." });
     }
 }
