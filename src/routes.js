@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { rotaInicial, cadastrarUsuario, deletarUsuario, editarUsuario, loginUsuario, uploadFoto, pegarMeuPerfil, adicionarLink, pegarPerfilPublico } from './controllers/userController.js';
+import { rotaInicial, cadastrarUsuario, deletarUsuario, editarUsuario, loginUsuario, uploadFoto, pegarMeuPerfil, adicionarLink, pegarPerfilPublico, deletarLink } from './controllers/userController.js';
 import { verificarToken } from "./middlewares/auth.js";
 import upload from './config/upload.js';
 
@@ -14,3 +14,4 @@ routes.put('/usuario/:id', verificarToken, editarUsuario);
 routes.post('/login', loginUsuario);
 routes.patch('/usuario/foto', verificarToken, upload.single('foto'), uploadFoto);
 routes.post('/usuario/link', verificarToken, adicionarLink);
+routes.delete('/usuario/link/:idLink', verificarToken, deletarLink);
