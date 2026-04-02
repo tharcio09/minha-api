@@ -159,6 +159,31 @@ export const adicionarLink = async (req, res) => {
     }
 }
 
+export const deletarLink = async (req, res) => {
+    try {
+        const { idLink } = req.params;
+
+        const usuarioAtualizado = await User.findByIdAndUpdate(
+            req.usuarioId,
+            { $pull: { links: { _id: idLink } } },
+            { new: true }
+        ).select("-password");
+
+        if (!usuarioAtualizado) {
+            return res.status(404).json({ message: "Usuário não encontrado." });
+        }
+
+        res.status(200).json({
+            message: "Link excluído com sucesso!",
+            usuario: usuarioAtualizado
+        });
+
+    } catch (error) {
+        console.error('ERRO AO DELETAR LINK:', error);
+        res.status(500).json({ message: "Erro ao excluir o link." });
+    }
+}
+
 export const pegarPerfilPublico = async (req, res) => {
     try {
         const { id } = req.params;
@@ -174,3 +199,4 @@ export const pegarPerfilPublico = async (req, res) => {
         res.status(500).json({ message: "Erro ao carregar o perfil." });
     }
 }
+
