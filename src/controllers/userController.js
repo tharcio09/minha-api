@@ -6,69 +6,96 @@ export const rotaInicial = (req, res) => {
     res.json({ message: "Bateu na rota inicial" });
 }
 
-
-export const cadastrarUsuario = async (req, res) => {
+export const cadastrarUsuario = async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
 
         if (!name || !email || !password) {
-            return res.status(400).json({ message: "Todas as informações são obrigatórias!" });
+            const error = new Error("Todas as informações são obrigatórias!");
+            error.status = 400;
+            return next(error);
         }
 
         const usuarioExistente = await User.findOne({ email });
 
-        if (usuarioExistente) {
-            return res.status(400).json({ message: "Este e-mail já está em uso." });
+        if (usuarioExistente) { // Se EXISTIR, barramos o cadastro
+            const error = new Error("Este e-mail já está em uso.");
+            error.status = 400;
+            return next(error);
         }
 
-        const newUser = await User.create({
-            name,
-            email,
-            password
-        });
-
+        const newUser = await User.create({ name, email, password });
         return res.status(201).json(newUser);
 
     } catch (error) {
-        console.error('Erro ao adicionar o usuário:', error);
-        return res.status(500).json({ message: "Erro interno no servidor." });
+        error.message = "Erro ao adicionar o usuário.";
+        error.status = 500;
+        next(error);
     }
 }
 
-export const deletarUsuario = async (req, res) => {
-
-    const deletedUser = await User.findByIdAndDelete(req.params.id);
-    res.json({ message: "Usuário excluído com sucesso." })
-}
-
-export const editarUsuario = async (req, res) => {
-
-    const { name, email, password } = req.body;
-
-    const editedUser = await User.findByIdAndUpdate(req.params.id, {
-        name: name,
-        email: email,
-        password: password
-    });
-
-    res.json({ message: "Usuário alterado com sucesso." });
-}
-
-export const loginUsuario = async (req, res) => {
+export const deletarUsuario = async (req, res, next) => {
     try {
+        const { id } = req.params;
+        const deletedUser = await User.findByIdAndDelete(id);
 
+        if (!deletedUser) {
+            const error = new Error("Usuário não encontrado para exclusão.");
+            error.status = 404;
+            return next(error);
+        }
+
+        res.json({ message: "Usuário excluído com sucesso." });
+    } catch (error) {
+        error.message = "Erro técnico ao tentar excluir o usuário.";
+        error.status = 500;
+        next(error);
+    }
+};
+
+export const editarUsuario = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { name, email, password } = req.body;
+
+        const editedUser = await User.findByIdAndUpdate(
+            id,
+            { name, email, password },
+            { new: true }
+        );
+
+        if (!editedUser) {
+            const error = new Error("Usuário não encontrado para edição.");
+            error.status = 404;
+            return next(error);
+        }
+
+        res.json({ message: "Usuário alterado com sucesso.", usuario: editedUser });
+    } catch (error) {
+        error.message = "Erro técnico ao tentar editar o usuário.";
+        error.status = 500;
+        next(error);
+    }
+};
+
+export const loginUsuario = async (req, res, next) => {
+    try {
         const { email, password } = req.body;
-
         const user = await User.findOne({ email });
 
+        // Padronizando o erro de Login com o Ralo
         if (!user) {
-            return res.status(401).json({ message: "Usuário ou senha inválidos." });
+            const error = new Error("Usuário ou senha inválidos.");
+            error.status = 401;
+            return next(error);
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(401).json({ message: "Usuário ou senha inválidos." });
+            const error = new Error("Usuário ou senha inválidos.");
+            error.status = 401;
+            return next(error);
         }
 
         const token = jwt.sign(
@@ -83,26 +110,31 @@ export const loginUsuario = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({ message: "Erro interno no servidor.", error: error.message });
+        error.message = "Erro interno no servidor.";
+        error.status = 500;
+        next(error);
     }
 }
 
-export const uploadFoto = async (req, res) => {
+export const uploadFoto = async (req, res, next) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ message: "Nenhuma imagem foi enviada." });
+            const error = new Error("Nenhuma imagem foi enviada.");
+            error.status = 400;
+            return next(error);
         }
 
         const linkDaFoto = req.file.path;
-        const userId = req.usuarioId;
         const usuarioAtualizado = await User.findByIdAndUpdate(
-            userId,
+            req.usuarioId,
             { avatar: linkDaFoto },
             { new: true }
         );
 
         if (!usuarioAtualizado) {
-            return res.status(404).json({ message: "Usuário não encontrado." });
+            const error = new Error("Usuário não encontrado.");
+            error.status = 404;
+            return next(error);
         }
 
         return res.status(200).json({
@@ -111,31 +143,38 @@ export const uploadFoto = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro ao atualizar a foto:', error);
-        return res.status(500).json({ message: "Erro interno no servidor.", error: error.message });
+        error.message = "Erro ao atualizar a foto.";
+        error.status = 500;
+        next(error);
     }
 }
 
-export const pegarMeuPerfil = async (req, res) => {
+export const pegarMeuPerfil = async (req, res, next) => {
     try {
         const usuario = await User.findById(req.usuarioId).select("-password");
 
         if (!usuario) {
-            return res.status(404).json({ message: "Usuário não encontrado." });
+            const error = new Error("Usuário não encontrado.");
+            error.status = 404;
+            return next(error);
         }
 
         res.json(usuario);
     } catch (error) {
-        res.status(500).json({ message: "Erro ao buscar seu perfil." });
+        error.message = "Erro ao buscar seu perfil.";
+        error.status = 500;
+        next(error);
     }
 }
 
-export const adicionarLink = async (req, res) => {
+export const adicionarLink = async (req, res, next) => {
     try {
         const { titulo, url } = req.body;
 
         if (!titulo || !url) {
-            return res.status(400).json({ message: "Título e URL são obrigatórios." });
+            const error = new Error("Título e URL são obrigatórios.");
+            error.status = 400;
+            return next(error);
         }
 
         const usuarioAtualizado = await User.findByIdAndUpdate(
@@ -145,7 +184,9 @@ export const adicionarLink = async (req, res) => {
         ).select("-password");
 
         if (!usuarioAtualizado) {
-            return res.status(404).json({ message: "Usuário não encontrado." });
+            const error = new Error("Usuário não encontrado.");
+            error.status = 404;
+            return next(error);
         }
 
         res.status(201).json({
@@ -154,12 +195,13 @@ export const adicionarLink = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('ERRO AO ADICIONAR LINK:', error);
-        res.status(500).json({ message: "Erro ao salvar o link." });
+        error.message = "Erro ao salvar o link.";
+        error.status = 500;
+        next(error);
     }
 }
 
-export const deletarLink = async (req, res) => {
+export const deletarLink = async (req, res, next) => {
     try {
         const { idLink } = req.params;
 
@@ -179,24 +221,28 @@ export const deletarLink = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('ERRO AO DELETAR LINK:', error);
-        res.status(500).json({ message: "Erro ao excluir o link." });
+        error.message = "Erro ao excluir o link.";
+        error.status = 500;
+        next(error)
     }
 }
 
-export const pegarPerfilPublico = async (req, res) => {
+export const pegarPerfilPublico = async (req, res, next) => {
     try {
         const { id } = req.params;
         const usuario = await User.findById(id).select("name avatar links");
 
         if (!usuario) {
-            return res.status(404).json({ message: "Perfil não encontrado." });
+            const error = new Error("Perfil não encontrado.");
+            error.status = 404;
+            return next(error);
         }
 
         res.json(usuario);
     } catch (error) {
-        console.error({ message: 'ERRO AO BUSCAR PERFIL PÚBLICO:', error });
-        res.status(500).json({ message: "Erro ao carregar o perfil." });
+        error.message = "Erro ao carregar o perfil.";
+        error.status = 500;
+        next(error);
     }
 }
 
