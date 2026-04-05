@@ -9,7 +9,7 @@ const app = express();
 app.use(cors({
     origin: [
         'http://localhost:5173',
-        'https://frontend-api-weld.vercel.app/'
+        'https://frontend-api-weld.vercel.app'
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
